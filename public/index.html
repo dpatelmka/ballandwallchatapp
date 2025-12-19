@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Global Chat</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #222; color: white; display: flex; height: 100vh; margin: 0; }
+        #sidebar { width: 200px; background: #333; padding: 20px; border-right: 1px solid #444; }
+        #chat-area { flex: 1; display: flex; flex-direction: column; }
+        #messages { flex: 1; padding: 20px; overflow-y: auto; }
+        #input-area { padding: 20px; background: #333; display: flex; }
+        input { flex: 1; padding: 10px; border-radius: 5px; border: none; }
+        button { padding: 10px 20px; margin-left: 10px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 5px; }
+        .room-btn { display: block; width: 100%; padding: 10px; margin-bottom: 5px; background: #444; color: white; border: none; cursor: pointer; text-align: left; }
+        .room-btn:hover { background: #555; }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h3>Rooms</h3>
+        <button class="room-btn" onclick="joinRoom('global')">🌎 Global</button>
+        <button class="room-btn" onclick="joinRoom('gaming')">🎮 Gaming</button>
+        <button class="room-btn" onclick="joinRoom('admin')" style="color: salmon;">🔒 Admin</button>
+    </div>
+    <div id="chat-area">
+        <div id="messages"></div>
+        <div id="input-area">
+            <input id="msg" type="text" placeholder="Type message..." autocomplete="off">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let currentRoom = 'global';
+        let username = prompt("Enter your username:") || "Guest";
+
+        socket.emit('join_room', 'global');
+
+        function joinRoom(room) {
+            currentRoom = room;
+            document.getElementById('messages').innerHTML = ''; // Clear chat
+            socket.emit('join_room', room);
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('msg');
+            if (input.value) {
+                socket.emit('send_message', { 
+                    room: currentRoom, 
+                    user: username, 
+                    text: input.value 
+                });
+                input.value = '';
+            }
+        }
+
+        socket.on('receive_message', (data) => {
+            const div = document.createElement('div');
+            div.innerHTML = `<b>${data.user}:</b> ${data.text}`;
+            document.getElementById('messages').appendChild(div);
+            // Auto scroll to bottom
+            document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+        });
+    </script>
+</body>
+</html>
